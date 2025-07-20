@@ -1,100 +1,142 @@
-import Photo from "../models/photo.model.js";
+import fs from 'fs';
+import exifParser from 'exif-parser';
+import Photo from '../models/photo.model.js';
+import { uploadToCloudinary} from '../middlewares/cloudinary.middleware.js'
 
-// Upload a new photo
+/**
+ * Upload a new photo
+ */
 export const uploadPhoto = async (req, res) => {
   try {
-    const {
-      caption,
-      tags,
-      categories,
-      exifData,
-      privacy,
-      isFeatured,
-      isForSale,
-      price,
-      licensingOptions
-    } = req.body;
-
-    // File upload handling assumed via middleware like Multer
     if (!req.file || !req.file.path) {
-      return res.status(400).json({ message: "Image upload required" });
+      return res.status(400).json({ message: 'Image file is required' });
     }
+
+    // Optional: file type validation
+    if (!req.file.mimetype.startsWith('image/')) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ message: 'Uploaded file must be an image' });
+    }
+
+    const buffer = fs.readFileSync(req.file.path);
+    const parser = exifParser.create(buffer);
+    const exif = parser.parse();
+
+    const exifData = {
+      camera: exif.tags.Make && exif.tags.Model ? `${exif.tags.Make} ${exif.tags.Model}` : undefined,
+      lens: exif.tags.LensModel,
+      exposure: exif.tags.ExposureTime,
+      aperture: exif.tags.FNumber,
+      focalLength: exif.tags.FocalLength,
+      iso: exif.tags.ISO
+    };
+
+    const uploadResult = await uploadToCloudinary(req.file.path, 'gallery_images');
+    fs.unlinkSync(req.file.path);
 
     const photo = await Photo.create({
       author: req.user.id,
-      image: req.file.path, // Adjust as needed for your storage setup
-      caption,
-      tags,
-      categories,
+      image: uploadResult.secure_url,
+      caption: req.body.caption,
+      tags: req.body.tags || [],
+      categories: req.body.categories || [],
       exifData,
-      privacy,
-      isFeatured,
-      isForSale,
-      price,
-      licensingOptions
+      privacy: req.body.privacy || 'public',
+      isFeatured: req.body.isFeatured || false,
+      isForSale: req.body.isForSale || false,
+      price: req.body.price || 0,
+      licensingOptions: req.body.licensingOptions || {}
     });
 
     res.status(201).json(photo);
-  } catch (err) {
-    res.status(500).json({ message: "Photo upload failed", error: err.message });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Photo upload failed', error: error.message });
   }
 };
 
-// Get a single photo by ID
+/**
+ * Get a single photo by ID
+ */
 export const getPhotoById = async (req, res) => {
   try {
     const photo = await Photo.findById(req.params.id)
-      .populate("author", "username avatar")
-      .populate({
-        path: "comments",
-        populate: { path: "author", select: "username avatar" }
-      });
-    if (!photo) return res.status(404).json({ message: "Photo not found" });
+      .populate('author', 'username avatar');
+
+    if (!photo) {
+      return res.status(404).json({ message: 'Photo not found' });
+    }
+
     res.json(photo);
-  } catch (err) {
-    res.status(400).json({ message: "Invalid ID", error: err.message });
+
+  } catch (error) {
+    res.status(400).json({ message: 'Invalid photo ID', error: error.message });
   }
 };
 
-// Get all photos (feed/discovery)
+/**
+ * Get all public photos (feed/discovery)
+ */
 export const getAllPhotos = async (req, res) => {
   try {
-    const photos = await Photo.find({ privacy: "public" })
+    const photos = await Photo.find({ privacy: 'public' })
       .sort({ createdAt: -1 })
-      .populate("author", "username avatar");
+      .populate('author', 'username avatar');
+
     res.json(photos);
-  } catch (err) {
-    res.status(500).json({ message: "Fetching photos failed", error: err.message });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Fetching photos failed', error: error.message });
   }
 };
 
-// Edit a photo (only by author)
+/**
+ * Update a photo (author-only)
+ */
 export const updatePhoto = async (req, res) => {
   try {
     const photo = await Photo.findById(req.params.id);
-    if (!photo) return res.status(404).json({ message: "Photo not found" });
-    if (photo.author.toString() !== req.user.id.toString()) {
-      return res.status(403).json({ message: "Not authorized" });
+
+    if (!photo) {
+      return res.status(404).json({ message: 'Photo not found' });
     }
+
+    if (photo.author.toString() !== req.user.id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to edit this photo' });
+    }
+
     Object.assign(photo, req.body);
+
     await photo.save();
-    res.json({ message: "Photo updated", photo });
-  } catch (err) {
-    res.status(500).json({ message: "Update failed", error: err.message });
+
+    res.json({ message: 'Photo updated successfully', photo });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Photo update failed', error: error.message });
   }
 };
 
-// Delete a photo (only by author)
+/**
+ * Delete a photo (author-only)
+ */
 export const deletePhoto = async (req, res) => {
   try {
     const photo = await Photo.findById(req.params.id);
-    if (!photo) return res.status(404).json({ message: "Photo not found" });
-    if (photo.author.toString() !== req.user.id.toString()) {
-      return res.status(403).json({ message: "Not authorized" });
+
+    if (!photo) {
+      return res.status(404).json({ message: 'Photo not found' });
     }
+
+    if (photo.author.toString() !== req.user.id.toString()) {
+      return res.status(403).json({ message: 'Not authorized to delete this photo' });
+    }
+
     await photo.deleteOne();
-    res.json({ message: "Photo deleted" });
-  } catch (err) {
-    res.status(500).json({ message: "Deletion failed", error: err.message });
+
+    res.json({ message: 'Photo deleted successfully' });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Photo deletion failed', error: error.message });
   }
 };

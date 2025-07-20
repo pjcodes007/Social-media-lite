@@ -1,42 +1,30 @@
-import express from "express";
-import { 
+import express from 'express';
+import upload from '../middlewares/multer.middleware.js';        // Multer middleware
+import {
   uploadPhoto,
   getPhotoById,
   getAllPhotos,
   updatePhoto,
   deletePhoto
-} from "../controllers/photo.controller.js";
-import { verifyToken } from "../middlewares/jwt.middleware.js";
-import upload from "../middlewares/multer.middleware.js";
+} from '../controllers/photo.controller.js';
 
-const photoRouter = express.Router();
+import { verifyToken } from '../middlewares/jwt.middleware.js';   // Example auth middleware
 
-// Upload a new photo (protected)
-photoRouter.post(
-  "/", 
-  verifyToken, 
-  upload.single("image"), 
-  uploadPhoto
-);
+const router = express.Router();
 
-// Get all public photos (feed/discovery)
-photoRouter.get("/", getAllPhotos);
+// 📤 Upload a photo (Protected Route)
+router.post('/', verifyToken, upload.single('image'), uploadPhoto);
 
-// Get details of a single photo
-photoRouter.get("/:id", getPhotoById);
+// 📄 Get a single photo by ID
+router.get('/:id', getPhotoById);
 
-// Update a photo (only author, protected)
-photoRouter.put(
-  "/:id", 
-  verifyToken, 
-  updatePhoto
-);
+// 🖼️ Get all public photos
+router.get('/', getAllPhotos);
 
-// Delete a photo (only author, protected)
-photoRouter.delete(
-  "/:id", 
-  verifyToken, 
-  deletePhoto
-);
+// ✏️ Update a photo (Protected Route)
+router.put('/:id', verifyToken, updatePhoto);
 
-export default photoRouter;
+// ❌ Delete a photo (Protected Route)
+router.delete('/:id', verifyToken, deletePhoto);
+
+export default router;

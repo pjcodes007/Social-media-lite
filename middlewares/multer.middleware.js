@@ -1,11 +1,9 @@
-// middlewares/upload.js
-import multer from "multer";
-import path from "path";
-
+import multer from 'multer';
+import path from 'path';
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/"); 
+    cb(null, 'uploads/');
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname));
@@ -13,12 +11,10 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  if (
-    file.mimetype.startsWith("image/")
-  ) {
+  if (file.mimetype.startsWith('image/')) {
     cb(null, true);
   } else {
-    cb(new Error("Only image files are allowed!"), false);
+    cb(new Error('Only image files are allowed!'), false);
   }
 };
 
