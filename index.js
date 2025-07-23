@@ -4,11 +4,13 @@ import profileRouter from './routes/user.route.js';
 import photoRouter from "./routes/photo.route.js";
 import commentRouter from "./routes/comment.route.js";
 import likeRouter from "./routes/like.router.js";
+import CORS from 'cors';
 //Connect Database
 connectDB();
 
 //Middlewares
 const app = express();
+app.use(CORS());
 app.use(express.json());
 
 //Routes

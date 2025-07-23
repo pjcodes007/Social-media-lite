@@ -44,13 +44,13 @@ export const signUp = async (req, res) => {
 
 export const Login = async (req, res) => {
     try {
-        const { username, email, password } = req.body;
+        const { email, password } = req.body;
 
-        if ((!username && !email) || !password) {
+        if ((!email) || !password) {
             return res.status(400).json({ message: 'Missing required fields' });
         }
 
-        const user = await User.findOne({ $or: [{ email }, { username }] });
+        const user = await User.findOne({ email });
 
         if (!user) {
             return res.status(400).json({ message: 'User not found ❌' });
