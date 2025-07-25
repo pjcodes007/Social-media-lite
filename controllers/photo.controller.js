@@ -154,3 +154,43 @@ export const deletePhoto = async (req, res) => {
     res.status(500).json({ message: 'Photo deletion failed', error: error.message });
   }
 };
+
+export const updatePhotoLayout = async (req, res) => {
+  try {
+    const { photoId } = req.params;
+    const { x, y, width, height } = req.body;
+
+    if (!photoId) {
+      return res.status(400).json({ message: 'Photo ID is required' });
+    }
+
+    // Find the photo and ensure it belongs to the current user
+    const photo = await Photo.findById(photoId);
+
+    if (!photo) {
+      return res.status(404).json({ message: 'Photo not found' });
+    }
+
+    // Optional: Check ownership (security)
+    if (photo.author.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Unauthorized to update this photo' });
+    }
+
+    // Update layout fields
+    photo.x = x ?? photo.x;
+    photo.y = y ?? photo.y;
+    photo.width = width ?? photo.width;
+    photo.height = height ?? photo.height;
+
+    await photo.save();
+
+    res.status(200).json({
+      message: 'Photo layout updated successfully',
+      photo
+    });
+
+  } catch (error) {
+    console.error('Error updating photo layout:', error);
+    res.status(500).json({ message: 'Failed to update photo layout', error: error.message });
+  }
+};
