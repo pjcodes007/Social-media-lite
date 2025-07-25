@@ -12,7 +12,6 @@ export const uploadPhoto = async (req, res) => {
       return res.status(400).json({ message: 'Image file is required' });
     }
 
-    // Optional: file type validation
     if (!req.file.mimetype.startsWith('image/')) {
       fs.unlinkSync(req.file.path);
       return res.status(400).json({ message: 'Uploaded file must be an image' });
@@ -38,23 +37,38 @@ export const uploadPhoto = async (req, res) => {
       author: req.user.id,
       image: uploadResult.secure_url,
       caption: req.body.caption,
-      tags: req.body.tags || [],
-      categories: req.body.categories || [],
+      tags: Array.isArray(req.body.tags)
+        ? req.body.tags
+        : typeof req.body.tags === 'string'
+        ? req.body.tags.split(',').map(t => t.trim())
+        : [],
+      categories: Array.isArray(req.body.categories)
+        ? req.body.categories
+        : typeof req.body.categories === 'string'
+        ? req.body.categories.split(',').map(c => c.trim())
+        : [],
       exifData,
       privacy: req.body.privacy || 'public',
       isFeatured: req.body.isFeatured || false,
       isForSale: req.body.isForSale || false,
       price: req.body.price || 0,
-      licensingOptions: req.body.licensingOptions || {}
+      licensingOptions: typeof req.body.licensingOptions === 'string'
+        ? JSON.parse(req.body.licensingOptions)
+        : req.body.licensingOptions || {},
+      x: req.body.x || 0,
+      y: req.body.y || 0,
+      width: req.body.width || 300,
+      height: req.body.height || 300,
     });
 
     res.status(201).json(photo);
 
   } catch (error) {
-    console.error(error);
+    console.error("Upload Error:", error);
     res.status(500).json({ message: 'Photo upload failed', error: error.message });
   }
 };
+
 
 /**
  * Get a single photo by ID

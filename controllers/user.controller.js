@@ -86,13 +86,8 @@ export const updateUserProfile = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-
-    user.username    = req.body.username    || user.username;
     user.bio         = req.body.bio         || user.bio;
     user.avatar      = req.body.avatar      || user.avatar;
-    user.email       = req.body.email       || user.email;
-    user.access      = req.body.access      || user.access;
-
     if (req.body.password && req.body.password.length >= 6) {
       user.password = await bcrypt.hash(req.body.password, 10);
     }
