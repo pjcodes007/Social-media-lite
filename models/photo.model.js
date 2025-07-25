@@ -11,7 +11,13 @@ const photoSchema = new mongoose.Schema({
   isFeatured: { type: Boolean, default: false },
   isForSale: { type: Boolean, default: false },
   price: Number,
-  licensingOptions: Object
+  licensingOptions: Object,
+
+
+  x: { type: Number, default: 0 },
+  y: { type: Number, default: 0 },
+  width: { type: Number, default: 300 },
+  height: { type: Number, default: 300 },
 }, { timestamps: true });
 
 export default mongoose.model('Photo', photoSchema);

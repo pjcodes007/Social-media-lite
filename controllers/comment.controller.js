@@ -57,3 +57,30 @@ export const getNumberOfComments = async(req,res)=>{
         return res.status(401).json({message:'❌Could not find comments',error:err.message});
     }
 }
+
+export const updatePhotoLayout = async (req, res) => {
+  try {
+    const layoutUpdates = req.body; // Expecting an array of objects with _id, x, y, width, height
+
+    const updates = layoutUpdates.map(photo =>
+      Photo.findByIdAndUpdate(photo._id, {
+        x: photo.x,
+        y: photo.y,
+        width: photo.width,
+        height: photo.height,
+      }, { new: true })
+    );
+
+    const updatedPhotos = await Promise.all(updates);
+
+    return res.status(200).json({
+      message: '✅ Layout updated successfully',
+      updatedPhotos
+    });
+  } catch (err) {
+    return res.status(500).json({
+      message: '❌ Could not update photo layout',
+      error: err.message
+    });
+  }
+};

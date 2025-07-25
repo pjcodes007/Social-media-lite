@@ -5,7 +5,8 @@ import {
   getPhotoById,
   getAllPhotos,
   updatePhoto,
-  deletePhoto
+  deletePhoto,
+  updatePhotoLayout     // ✅ Import the new controller
 } from '../controllers/photo.controller.js';
 
 import { verifyToken } from '../middlewares/jwt.middleware.js';   // Example auth middleware
@@ -26,5 +27,8 @@ router.put('/:id', verifyToken, updatePhoto);
 
 // ❌ Delete a photo (Protected Route)
 router.delete('/:id', verifyToken, deletePhoto);
+
+// 🔄 ✅ New route to update photo layout (bulk update)
+router.put('/layout/update', verifyToken, updatePhotoLayout);
 
 export default router;
